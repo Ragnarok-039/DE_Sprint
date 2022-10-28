@@ -1,5 +1,5 @@
-Áðåæíåâ Àëåêñàíäð Àëåêñàíäðîâè÷
-Âûñøåå
+Ð‘Ñ€ÐµÐ¶Ð½ÐµÐ² ÐÐ»ÐµÐºÑÐ°Ð½Ð´Ñ€ ÐÐ»ÐµÐºÑÐ°Ð½Ð´Ñ€Ð¾Ð²Ð¸Ñ‡
+Ð’Ñ‹ÑÑˆÐµÐµ
 
 commit 0a626b9200ab41a2cf67529c44dff388759be13c (HEAD -> develop)
 Author: Ragnarok-039 <63465995+Ragnarok-039@users.noreply.github.com>
