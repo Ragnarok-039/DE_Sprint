@@ -1,10 +1,11 @@
 package chapter_2_2
 
 import scala.collection.mutable.ListBuffer
+import scala.reflect.internal.util.TriState.{False, True}
 
 object p_3_d extends App {
 
-//  ЗП из пункта b. Закрепил постоянным значением. Естественно, в пункте b может быть любым.
+  //  ЗП из пункта b. Закрепил постоянным значением. Естественно, в пункте b может быть любым.
   val my_salary: Double = 175.0
 
   val salaries: List[Double] = List(100, 150, 200, 80, 120, 75)
@@ -16,6 +17,7 @@ object p_3_d extends App {
   println(s"Самая низкая ЗП: ${new_salaries.min}")
   println()
 
+
   val new_workers: List[Double] = List(350, 90)
   val new_salaries_2: List[Double] = new_workers ++ new_salaries
   println("Отсортированный по возрастанию список ЗП:")
@@ -23,12 +25,23 @@ object p_3_d extends App {
   println()
 
 
-  val list_salaries_f: ListBuffer[Double] = List()
+  var list_salaries_f = ListBuffer[Double]()
   val worker_0: Double = 130
+  var flag: Int = 1
   for (i <- new_salaries_2.sorted) {
-    if (i >= worker_0) {
-      list_salaries_f += worker_0
+    if (flag == 1) {
+      if (i <= worker_0) {
+        list_salaries_f += i
+      }
+      else {
+        list_salaries_f += worker_0
+        list_salaries_f += i
+        var flag: Int = 0
+      }
     }
-    list_salaries_f += i
+    if (flag == 0) {
+      list_salaries_f += i
+    }
   }
+  println(list_salaries_f)
 }
