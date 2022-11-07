@@ -1,9 +1,9 @@
 package chapter_2_2
 
+import scala.+:
 import scala.collection.mutable.ListBuffer
-import scala.reflect.internal.util.TriState.{False, True}
 
-object p_3_d extends App {
+object p_3_d_f extends App {
 
   //  ЗП из пункта b. Закрепил постоянным значением. Естественно, в пункте b может быть любым.
   val my_salary: Double = 175.0
@@ -18,6 +18,7 @@ object p_3_d extends App {
   println()
 
 
+  println("Добавили сотрудников с окладами 350 и 90 тысяч.")
   val new_workers: List[Double] = List(350, 90)
   val new_salaries_2: List[Double] = new_workers ++ new_salaries
   println("Отсортированный по возрастанию список ЗП:")
@@ -25,23 +26,19 @@ object p_3_d extends App {
   println()
 
 
-  var list_salaries_f = ListBuffer[Double]()
+  println("Добавили сотрудника с окладом 130 тысяч.")
+  var list_salaries_f = List.empty[Double]
   val worker_0: Double = 130
-  var flag: Int = 1
-  for (i <- new_salaries_2.sorted) {
-    if (flag == 1) {
+  var step: Int = 0
+  var new_salaries_3 = new_salaries_2.sorted
+  for (i <- new_salaries_3) {
       if (i <= worker_0) {
-        list_salaries_f += i
+        step += 1
       }
-      else {
-        list_salaries_f += worker_0
-        list_salaries_f += i
-        var flag: Int = 0
-      }
-    }
-    if (flag == 0) {
-      list_salaries_f += i
-    }
+  list_salaries_f = new_salaries_3.slice(0, step)
+    list_salaries_f = list_salaries_f :+ worker_0
+    list_salaries_f = list_salaries_f ++ new_salaries_3.slice(step, new_salaries_3.length)
   }
   println(list_salaries_f)
+  println()
 }
