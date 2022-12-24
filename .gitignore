@@ -9,7 +9,6 @@
 *.html
 *.txt
 *.cfg
-*.db
 /not_share
 /venv
 
