@@ -7,7 +7,6 @@
 *.xls
 *.db
 *.html
-*.txt
 *.cfg
 /not_share
 /venv
