@@ -105,6 +105,74 @@ def file_company_rates_to_postgres(path, file_name, company_list, api_key):
             conn.close()
 
 
+def company_rates_showcase():
+    conn = psycopg2.connect(database='brezhnev_alexander_db', user='brezhnev_alexander',
+                            password='7Kh9792a', host='146.120.224.166', port='9452')
+    cursor = conn.cursor()
+
+    cursor.execute("""insert into company_rates_showcase select * from (
+                        with open_table as (select * from 
+                        (select *, 
+                        row_number() over(partition by symbol, date(time_series_30min) order by time_series_30min) as num
+                        from company_rates) as temp 
+                        where temp.num = 1),
+
+                        close_table as (select * from 
+                        (select *, 
+                        row_number() over(partition by symbol, date(time_series_30min) order by time_series_30min desc) as num
+                        from company_rates) as temp 
+                        where temp.num = 1),
+
+                        total_volume as (select symbol, date(time_series_30min) as date, sum(volume) as total_volume
+                        from company_rates 
+                        group by date(time_series_30min), symbol),
+
+                        max_volume as (select * from 
+                        (select *, 
+                        row_number() over(partition by symbol, date(time_series_30min) order by volume desc) as num
+                        from company_rates) as temp 
+                        where temp.num = 1),
+
+                        max_rate as (select * from 
+                        (select *, 
+                        row_number() over(partition by symbol, date(time_series_30min) order by high desc) as num
+                        from company_rates) as temp 
+                        where temp.num = 1), 
+
+                        min_rate as (select * from 
+                        (select *, 
+                        row_number() over(partition by symbol, date(time_series_30min) order by low) as num
+                        from company_rates) as temp 
+                        where temp.num = 1)
+
+                        select md5(concat(ot.symbol, date(ot.time_series_30min))) as key, 
+                        ot.symbol,
+                        date(ot.time_series_30min) as date, 
+                        tv.total_volume, 
+                        ot.open, 
+                        ct.close, 
+                        ot.open - ct.close as difference, 
+                        round((ct.close * 100) / ot.open, 2) as difference_percent, 
+                        mv.time_series_30min as largest_trading_volume, 
+                        mr.time_series_30min as max_rate, 
+                        min_r.time_series_30min as min_rate 
+                        from open_table as ot 
+                        left join close_table as ct 
+                        on ot.symbol = ct.symbol and date(ot.time_series_30min) = date(ct.time_series_30min)
+                        left join total_volume as tv
+                        on ot.symbol = tv.symbol and date(ot.time_series_30min) = tv.date
+                        left join max_volume as mv
+                        on ot.symbol = mv.symbol and date(ot.time_series_30min) = date(mv.time_series_30min)
+                        left join max_rate as mr
+                        on ot.symbol = mr.symbol and date(ot.time_series_30min) = date(mr.time_series_30min)
+                        left join min_rate as min_r
+                        on ot.symbol = min_r.symbol and date(ot.time_series_30min) = date(min_r.time_series_30min) 
+                        where date(ot.time_series_30min) = date(now()) - interval '1 day') as total;""")
+    conn.commit()
+
+    conn.close()
+
+
 default_args = {
     'owner': 'Alexander Brezhnev',
     'email': 'brezhnev.aleksandr@gmail.com',
@@ -158,6 +226,11 @@ file_company_rates_to_postgres = PythonOperator(
     op_kwargs={'path': path, 'file_name': file_name, 'company_list': company_list, 'api_key': api_key},
     dag=dag
 )
+company_rates_showcase = PythonOperator(
+    task_id='company_rates_showcase',
+    python_callable=company_rates_showcase,
+    dag=dag
+)
 
 exchange_rate_to_json >> file_exchange_rate_to_postgres
-company_rates_to_json_file >> file_company_rates_to_postgres
+company_rates_to_json_file >> file_company_rates_to_postgres >> company_rates_showcase
