@@ -121,7 +121,7 @@ dag = DAG(
 )
 
 api_key = '6LXZ30QB7S2W6EPY'
-path = f'{os.path.abspath("exchange_rates_and_companies.py")}/raw_data/'
+path = f'{os.path.abspath("currency_exchange_rate_every_day.py")}/raw_data/'
 
 today = datetime.date.today()
 previous_date = today - dateutil.relativedelta.relativedelta(months=1)
