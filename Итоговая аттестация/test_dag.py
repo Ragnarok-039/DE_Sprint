@@ -1,3 +1,6 @@
+# Тестовый dag.
+# В работе не используется.
+
 import pendulum
 import requests
 import pandas as pd

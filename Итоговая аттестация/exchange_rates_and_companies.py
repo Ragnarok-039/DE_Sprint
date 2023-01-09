@@ -12,6 +12,8 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 
 
+# Функция для формирования сырого слоя данных курса валют.
+# Запрос к API, далее записывается в json файл.
 def exchange_rate_to_json_file(path, file_name, from_cur, to_cur, api_key):
     with open(f'currency_exchange_rate_{file_name}', 'w') as outfile:
         for now in from_cur:
@@ -26,6 +28,8 @@ def exchange_rate_to_json_file(path, file_name, from_cur, to_cur, api_key):
             time.sleep(30)
 
 
+# Функция для формирования промежуточного слоя данных в заранее созданной таблице postgres.
+# Происходит считывание файла json, выборка необходимых данных и запись в БД.
 def file_exchange_rate_to_postgres(path, file_name):
     with open(f'currency_exchange_rate_{file_name}') as json_file:
         conn = psycopg2.connect(database='brezhnev_alexander_db', user='brezhnev_alexander',
@@ -58,6 +62,8 @@ def file_exchange_rate_to_postgres(path, file_name):
         conn.close()
 
 
+# Функция для формирования сырого слоя данных акций компаний.
+# Запрос к API, далее записывается в json файл.
 def company_rates_to_json_file(path, file_name, company_list, api_key):
     for name in company_list:
         with open(f'company_rates_{name}_{file_name}', 'w') as outfile:
@@ -72,6 +78,8 @@ def company_rates_to_json_file(path, file_name, company_list, api_key):
             time.sleep(30)
 
 
+# Функция для формирования промежуточного слоя данных в заранее созданной таблице postgres.
+# Происходит считывание файла json, выборка необходимых данных и запись в БД.
 def file_company_rates_to_postgres(path, file_name, company_list, api_key):
     for name in company_list:
         with open(f'company_rates_{name}_{file_name}') as json_file:
@@ -105,11 +113,28 @@ def file_company_rates_to_postgres(path, file_name, company_list, api_key):
             conn.close()
 
 
+# Функция для формирования витрины данных из промежуточного слоя данных на основе таблицы акций компаний.
+# Запрос сделан с помощью SQL.
+# В соответствии с заданием №2 сформирован скрипт для заполнения таблицы витрин.
+# Данный блок сделан через python оператор, хотя airflow позволяет запускать SQL операторы.
+# Но в тестовой версии airflow, к которой нам предоставили доступ, нет доступа к панели администратора.
+# Именно в панели администратора настраивается коннектор для БД.
+# Также SQL запрос можно сделать отдельным .sql файлом и читать его оттуда.
+# Но, при попытке открытия .sql файла, код на тестовом сервере airflow падал с ошибкой.
+# Судя по логам, ошибка связана с доступами, значит, необходимо правильно настроить все доступы.
 def company_rates_showcase():
     conn = psycopg2.connect(database='brezhnev_alexander_db', user='brezhnev_alexander',
                             password='7Kh9792a', host='146.120.224.166', port='9452')
     cursor = conn.cursor()
 
+    # SQL запрос сформирован с помощью табличных выражений.
+    # open_table - курсы валют на момент открытия торгов для данных суток.
+    # close_table - курсы валют на момент закрытия торгов для данных суток.
+    # total_volume - суммарный объем торгов за последние сутки.
+    # max_volume - минимальный временной интервал, на котором был зафиксирован самый крупный объем торгов для данных суток.
+    # max_rate - минимальный временной интервал, на котором был зафиксирован максимальный курс для данных суток.
+    # min_rate - минимальный временной интервал, на котором был зафиксирован минимальный курс торгов для данных суток.
+    # Суррогатный ключ категории получен с помощью хеш-функции путем выборки названия компании и временного интервала.
     cursor.execute("""insert into company_rates_showcase select * from (
                         with open_table as (select * from 
                         (select *, 
@@ -196,10 +221,14 @@ previous_date = today - dateutil.relativedelta.relativedelta(months=1)
 year = previous_date.year
 month = previous_date.month
 day = previous_date.day
+# Наименование json файла для сырого слоя данных.
 file_name = f'{year}_{month}_{day}.json'
 
+# Список валют для конвертации.
 from_cur = ['USD', 'EUR', 'JPY', 'BTC', 'SHIB']
+# Все конвертируется в рубли.
 to_cur = 'RUB'
+# Список компаний для получения котировок акций.
 company_list = ['IBM', 'AAPL', 'AMZN', 'GOOG', 'INTC', 'NFLX']
 
 exchange_rate_to_json = PythonOperator(
@@ -232,5 +261,6 @@ company_rates_showcase = PythonOperator(
     dag=dag
 )
 
+# Задание очередности выполнения задач.
 exchange_rate_to_json >> file_exchange_rate_to_postgres
 company_rates_to_json_file >> file_company_rates_to_postgres >> company_rates_showcase

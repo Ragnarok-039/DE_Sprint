@@ -1,3 +1,6 @@
+# Тестовый код для получения котировок акций компаний.
+# Обращение к api, запись в json, запись в БД.
+
 import requests
 import pandas as pd
 import os
